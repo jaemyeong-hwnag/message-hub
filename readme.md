@@ -121,10 +121,12 @@ spring:
 * `[TICKET-ID] prefix: 메시지` 형식으로 작성하지만, 현재는 사이드 프로젝트이므로 따로 티켓 없이 prefix 위주로 작성합니다. 추후 GitHub issue ID로 티켓 관리할 예정입니다.
 * 사용 중인 prefix:
 
-    * `feat:` 기능 추가
-    * `fix:` 버그 수정
-    * `style:` 코드 포맷팅, 세미콜론 누`r`락 등 기능 변경 없는 스타일 수정
-    * `docs:` 문서 작성 또는 수정
+  * `feat:` 기능 추가
+  * `fix:` 버그 수정
+  * `style:` 코드 포맷팅, 세미콜론 누`r`락 등 기능 변경 없는 스타일 수정
+  * `docs:` 문서 작성 또는 수정
+  * `build:` 빌드 시스템 관련 변경 (Gradle 등)
+  * `ci:` CI 설정 변경 (GitHub Actions, Jenkins 등)
 
 ### 브랜치 전략
 
