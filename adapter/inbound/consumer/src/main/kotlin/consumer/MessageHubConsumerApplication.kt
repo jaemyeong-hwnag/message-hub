@@ -1,11 +1,11 @@
-package com.hjm.messagehub.api
+package com.hjm.messagehub.consumer
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
 @SpringBootApplication
-class MessageHubApplication
+class MessageHubConsumerApplication
 
 fun main(args: Array<String>) {
-    SpringApplication.run(MessageHubApplication::class.java, *args)
+    SpringApplication.run(MessageHubConsumerApplication::class.java, *args)
 }

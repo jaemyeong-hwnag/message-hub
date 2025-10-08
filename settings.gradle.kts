@@ -19,11 +19,12 @@ pluginManagement {
 }
 
 include(
-    ":common",
-    ":domain",
-    ":api",
-    ":worker",
-    ":provider",
-    ":external:client",
-    ":external:storage",
+    "common",
+    "domain",
+    "application",
+    "adapter:inbound:api",
+    "adapter:inbound:consumer",
+    "adapter:inbound:scheduler",
+    "adapter:outbound:storage",
+    "adapter:outbound:client",
 )
