@@ -1,45 +1,46 @@
-plugins {
-    // 버전은 settings.gradle.kts의 pluginManagement에서 결정됨
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
-}
+val projectGroup = providers.gradleProperty("group").get()
+val applicationVersion = providers.gradleProperty("version").get()
+val jvmTarget = providers.gradleProperty("jvmTarget").get().toInt()
 
-group = "com.hjm"
-version = providers.gradleProperty("applicationVersion").getOrElse("0.0.1")
+plugins {
+    kotlin("jvm") apply false
+    kotlin("plugin.spring") apply false
+    id("org.springframework.boot") apply false
+    id("io.spring.dependency-management") apply false
+}
 
 java {
-    toolchain { languageVersion = JavaLanguageVersion.of(21) }
-}
-
-repositories { mavenCentral() }
-
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-
-    testImplementation("org.springframework.boot:spring-boot-starter-test") {
-        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-    }
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-}
-
-kotlin {
-    // Kotlin 2.2.x OK
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-        javaParameters.set(true)
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
-    testLogging {
-        events("passed", "skipped", "failed")
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+tasks.withType<JavaCompile> {
+    options.release.set(21)
+}
+
+allprojects {
+    group = projectGroup
+    version = applicationVersion
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.addAll("-Xjsr305=strict")
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+        }
+    }
+
+    tasks.withType<Test> {
+        useJUnitPlatform()
     }
 }
