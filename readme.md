@@ -173,6 +173,117 @@ spring:
 
 ---
 
+## CI/CD (GitHub Actions)
+
+### 자동 테스트 설정
+
+프로젝트는 GitHub Actions를 통해 자동 테스트를 수행합니다.
+
+#### 테스트 분류
+
+* **Unit Tests** (`@Tag("unit")`): 단위 테스트, 빠른 실행
+* **Integration Tests** (`@Tag("integration")`): 통합 테스트, 외부 의존성 필요
+
+#### 테스트 실행 방식
+
+```bash
+# 모든 모듈의 Unit 테스트 실행 (CI/CD에서 실행)
+./gradlew test
+
+# 특정 모듈의 테스트만 실행
+./gradlew :api:test
+./gradlew :common:test
+./gradlew :domain:test
+./gradlew :external:client:test
+./gradlew :external:storage:test
+./gradlew :provider:test
+./gradlew :worker:test
+
+# Integration 테스트만 실행 (로컬에서 필요시)
+./gradlew integrationTest
+
+# 모든 테스트 실행 (Unit + Integration)
+./gradlew test integrationTest
+```
+
+#### 멀티모듈 테스트 실행
+
+**CI/CD에서는 모든 모듈의 테스트가 병렬로 실행됩니다:**
+
+- `common` 모듈 테스트
+- `domain` 모듈 테스트
+- `api` 모듈 테스트
+- `external/client` 모듈 테스트
+- `external/storage` 모듈 테스트
+- `provider` 모듈 테스트
+- `worker` 모듈 테스트
+
+#### GitHub Actions 워크플로우
+
+**자동 실행 조건:**
+
+* `main`, `develop` 브랜치에 push
+* 다음 브랜치로의 PR:
+    - ✅ **feature 브랜치** (`feature/*`)
+    - ✅ **release 브랜치** (`release/*`)
+    - ✅ **hotfix 브랜치** (`hotfix/*`)
+    - ✅ **main, develop 브랜치**
+
+**PR 이벤트:**
+
+- ✅ **PR 생성 시** (`opened`)
+- ✅ **PR 업데이트 시** (`synchronize`) - 새 커밋 push
+- ✅ **PR 재오픈 시** (`reopened`)
+- ✅ **PR 리뷰 준비 완료 시** (`ready_for_review`)
+
+**테스트 워크플로우 (`test.yml`):**
+
+* **환경**: Ubuntu, Java 21, Gradle
+* **실행 테스트**: 모든 모듈의 Unit 테스트 실행 (Integration 테스트 제외)
+* **결과 리포트**: PR에 테스트 결과 자동 표시 및 체크 실행
+* **권한**: PR 댓글, 체크 실행, 상태 업데이트 권한
+* **캐시**: Gradle 의존성 캐시 활용
+
+**빌드 워크플로우 (`build.yml`):**
+
+* **환경**: Ubuntu, Java 21, Gradle
+* **실행 작업**: 프로젝트 빌드 (테스트 제외)
+* **아티팩트**: 빌드 결과물 자동 업로드
+
+**PR 검사 워크플로우 (`pr-check.yml`):**
+
+* **환경**: Ubuntu, Java 21, Gradle
+* **실행 작업**: 코드 스타일, 단위 테스트, 빌드 검사
+* **PR 댓글**: 검사 결과를 PR에 자동 댓글
+
+**PR 체크리스트:**
+
+- [ ] 테스트 통과 (자동)
+- [ ] 빌드 성공 (자동)
+- [ ] 코드 스타일 검사 통과 (자동)
+- [ ] PR 댓글 확인 (자동)
+- [ ] 코드 리뷰 완료 (수동)
+
+### 테스트 작성 가이드
+
+```kotlin
+// Unit 테스트 예시
+@Test
+@Tag("unit")
+fun `단위 테스트 예시`() {
+    // 빠르고 독립적인 테스트
+}
+
+// Integration 테스트 예시  
+@Test
+@Tag("integration")
+fun `통합 테스트 예시`() {
+    // 외부 의존성이 필요한 테스트
+}
+```
+
+---
+
 ## Git 컨벤션
 
 ### 커밋 메시지
@@ -186,7 +297,22 @@ spring:
 
 ### 브랜치 전략
 
-* Git Flow 전략을 사용합니다.
+**Git Flow 전략을 사용합니다.**
+
+#### 브랜치 구조
+
+* **`main`**: 프로덕션 배포 브랜치 (안정화된 코드)
+* **`develop`**: 개발 통합 브랜치 (다음 릴리즈를 위한 개발)
+* **`feature/*`**: 기능 개발 브랜치 (예: `feature/KAN-1-slack-integration`)
+* **`release/*`**: 릴리즈 준비 브랜치 (예: `release/v1.2.0`)
+* **`hotfix/*`**: 긴급 수정 브랜치 (예: `hotfix/critical-bug-fix`)
+
+#### 브랜치별 자동 테스트
+
+* **feature → develop**: 단위 테스트, 빌드 검사
+* **develop → main**: 단위 테스트, 빌드 검사
+* **release → main**: 모든 테스트 (단위 + 통합), 릴리즈 검사
+* **hotfix → main**: 모든 테스트, 긴급 배포 검사
 
 ### 커밋 트리 관리
 

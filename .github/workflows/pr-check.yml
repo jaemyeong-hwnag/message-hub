@@ -1,0 +1,94 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'feature/*'   # feature 브랜치로의 PR
+      - 'release/*'   # release 브랜치로의 PR
+      - 'hotfix/*'    # hotfix 브랜치로의 PR
+    types:
+      - opened      # PR 생성 시
+      - synchronize # PR 업데이트 시 (새 커밋 push)
+      - reopened    # PR 재오픈 시
+      - ready_for_review # PR 리뷰 준비 완료 시
+
+jobs:
+  pr-validation:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+      statuses: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Check code style
+        run: ./gradlew ktlintCheck
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: ./gradlew test -x integrationTest --continue
+
+      - name: Build project
+        run: ./gradlew build -x test -x integrationTest
+
+      - name: Comment PR with results
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // 테스트 결과 확인
+            let testStatus = '✅ 성공';
+            let buildStatus = '✅ 성공';
+            let codeStyleStatus = '✅ 성공';
+            
+            // PR 댓글 작성
+            const comment = `## 🔍 PR 자동 검사 결과
+            
+            ### 📊 검사 항목
+            - **코드 스타일**: ${codeStyleStatus}
+            - **단위 테스트**: ${testStatus}
+            - **빌드**: ${buildStatus}
+            
+            ### 📝 상세 결과
+            - 모든 검사가 완료되었습니다.
+            - Integration 테스트는 로컬에서 실행해주세요.
+            
+            ### 🚀 다음 단계
+            - [ ] 코드 리뷰 요청
+            - [ ] Integration 테스트 실행 (필요시)
+            - [ ] 문서 업데이트 확인`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'feature/*'   # feature 브랜치로의 PR
+      - 'release/*'   # release 브랜치로의 PR
+      - 'hotfix/*'    # hotfix 브랜치로의 PR
+    types:
+      - opened      # PR 생성 시
+      - synchronize # PR 업데이트 시 (새 커밋 push)
+      - reopened    # PR 재오픈 시
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+      statuses: write
+    
+    strategy:
+      matrix:
+        java-version: [ 21 ]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build project
+        run: ./gradlew build -x test -x integrationTest
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-artifacts-${{ github.run_number }}
+          path: |
+            **/build/libs/
+          retention-days: 30
