@@ -1,4 +1,4 @@
-package com.hjm.messagehub
+package com.hjm.messagehub.api
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication

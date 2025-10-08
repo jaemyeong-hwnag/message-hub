@@ -1,20 +1,29 @@
 rootProject.name = "message-hub"
 
 pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-
-    // gradle.properties 값 읽기
-    val kotlinVersion = providers.gradleProperty("kotlinVersion").get()
-    val springBootVersion = providers.gradleProperty("springBootVersion").get()
-    val springDepMgmtVersion = providers.gradleProperty("springDependencyManagementVersion").get()
+    val kotlinVersion: String by settings
+    val springBootVersion: String by settings
+    val springDependencyManagementVersion: String by settings
 
     plugins {
         kotlin("jvm") version kotlinVersion
         kotlin("plugin.spring") version kotlinVersion
         id("org.springframework.boot") version springBootVersion
-        id("io.spring.dependency-management") version springDepMgmtVersion
+        id("io.spring.dependency-management") version springDependencyManagementVersion
+        kotlin("kapt") version kotlinVersion
+    }
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
     }
 }
+
+include(
+    ":common",
+    ":domain",
+    ":api",
+    ":worker",
+    ":provider",
+    ":external:client",
+    ":external:storage",
+)
