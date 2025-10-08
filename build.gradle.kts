@@ -1,6 +1,6 @@
 val projectGroup = providers.gradleProperty("group").get()
 val applicationVersion = providers.gradleProperty("version").get()
-val jvmTarget = providers.gradleProperty("jvmTarget").get().toInt()
+val jvmTarget = providers.gradleProperty("jvmTarget").get()
 
 plugins {
     kotlin("jvm")
@@ -34,7 +34,16 @@ subprojects {
 
     dependencies {
         implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+        // logging
+        implementation("org.slf4j:slf4j-api:2.0.16")
+        implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+        runtimeOnly("ch.qos.logback:logback-classic:1.5.8")
+
+        testImplementation(platform("org.junit:junit-bom:5.10.2"))
+        testImplementation("org.junit.jupiter:junit-jupiter")
         testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
@@ -64,12 +73,42 @@ subprojects {
     }
 }
 
-// Spring Boot 애플리케이션 모듈들에만 Spring Boot 플러그인 적용
-configure(subprojects.filter { it.name in listOf("api") }) {
+// adapter
+configure(
+    subprojects.filter { it.path.startsWith(":adapter:") }
+) {
+    dependencies {
+        implementation(project(":domain"))
+        implementation(project(":common"))
+    }
+}
+
+// adapter:inbound:*
+configure(
+    subprojects.filter { it.path.startsWith(":adapter:inbound:") }
+) {
     apply(plugin = "org.springframework.boot")
+    apply(plugin = "org.jetbrains.kotlin.plugin.spring")
 
     dependencies {
+        implementation(project(":application"))
+
         implementation("org.springframework.boot:spring-boot-starter")
         testImplementation("org.springframework.boot:spring-boot-starter-test")
+    }
+}
+
+// domain
+project(":domain") {
+    dependencies {
+        api(project(":common"))
+    }
+}
+
+// application
+project(":application") {
+    dependencies {
+        api(project(":domain"))
+        implementation(project(":common"))
     }
 }
